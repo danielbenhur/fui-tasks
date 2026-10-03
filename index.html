@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#ffffff">
+<meta name="application-name" content="FUI Tasks">
+<title>FUI Tasks</title>
+<style>
+/* ===== CONFIGURAÇÃO VISUAL: e-ink, alto contraste, sem animações ===== */
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body { font-family: Georgia, serif; background: #fff; color: #000; font-size: 15px; }
+button, input, select { font-family: Georgia, serif; font-size: 15px; }
+button, a { cursor: pointer; }
+button { color: #000; background: #fff; border: 1px solid #000; }
+button:focus, input:focus, select:focus, a:focus { outline: 2px solid #000; outline-offset: 1px; }
+.hidden { display: none !important; }
+
+header { border-bottom: 2px solid #000; }
+h1 { margin: 0; padding: 10px 12px 5px; text-align: center; font-size: 22px; letter-spacing: .04em; }
+.subtitle { margin: 0 0 9px; text-align: center; color: #555; font-size: 12px; }
+nav { display: table; width: 100%; table-layout: fixed; border-top: 1px solid #000; }
+nav button { display: table-cell; width: 50%; padding: 10px 4px; border: 0; border-right: 1px solid #000; }
+nav button:last-child { border-right: 0; }
+nav button.on { background: #000; color: #fff; }
+
+main { padding: 10px; }
+.toolbar { margin-bottom: 8px; padding: 7px; border: 1px solid #000; background: #eee; }
+.toolbar label { font-weight: bold; margin-right: 5px; }
+.toolbar select, .toolbar input { padding: 5px; border: 1px solid #000; background: #fff; }
+.toolbar input { width: 38%; min-width: 120px; }
+.toolbar button { padding: 5px 8px; margin-left: 4px; }
+.status { margin: 7px 0; color: #555; font-size: 12px; }
+
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; min-width: 660px; }
+th, td { border: 1px solid #000; padding: 6px 4px; text-align: center; vertical-align: middle; }
+th { background: #ddd; font-size: 13px; }
+th button { width: 100%; border: 0; background: transparent; padding: 2px; font-weight: bold; }
+td.task-name { text-align: left; }
+td.task-name a { color: #000; text-decoration: underline; }
+tr.done td { color: #777; text-decoration: line-through; }
+tr.done input { text-decoration: none; }
+.empty { padding: 22px; border: 1px solid #000; text-align: center; }
+
+/* ===== MAPA RADIAL: nós e conexões feitos somente com divs ===== */
+#map { position: relative; height: 610px; min-height: 430px; overflow: hidden; border: 1px solid #000; background: #fff; }
+.edge { position: absolute; height: 1px; background: #000; transform-origin: 0 0; -webkit-transform-origin: 0 0; z-index: 1; }
+.node { position: absolute; z-index: 2; display: table; border: 2px solid #000; border-radius: 50%; background: #fff; text-align: center; overflow: hidden; cursor: pointer; }
+.node span { display: table-cell; vertical-align: middle; padding: 2px; font-size: 11px; line-height: 1.08; word-wrap: break-word; }
+.node.center { background: #000; color: #fff; font-weight: bold; }
+.node.cat { background: #ddd; font-weight: bold; }
+.node.done { color: #777; background: #eee; text-decoration: line-through; }
+.map-note { margin: 6px 0; color: #555; font-size: 12px; }
+
+/* ===== MODAL GLOBAL ===== */
+#modal { display: none; position: fixed; z-index: 10; top: 0; left: 0; width: 100%; height: 100%; padding: 14px; background: #fff; overflow-y: auto; }
+.modal-box { max-width: 520px; margin: 10px auto; padding: 14px; border: 2px solid #000; background: #fff; }
+#modal h2 { margin: 0 0 12px; font-size: 20px; }
+#modal label { display: block; margin: 9px 0 3px; font-weight: bold; }
+#modal input { width: 100%; padding: 7px; border: 1px solid #000; background: #fff; }
+.score-fields { width: 100%; display: table; table-layout: fixed; }
+.score-field { display: table-cell; padding-right: 6px; }
+.score-field:last-child { padding-right: 0; }
+.modal-actions { margin-top: 14px; }
+.modal-actions button { padding: 8px 14px; margin: 0 5px 5px 0; border-width: 2px; }
+#deleteBtn { color: #000; border-color: #000; }
+.error { min-height: 18px; color: #000; font-weight: bold; }
+
+.fab { position: fixed; z-index: 8; right: 14px; bottom: 14px; width: 52px; height: 52px; border: 2px solid #000; border-radius: 50%; background: #fff; font-size: 29px; line-height: 1; }
+.fab:active { background: #000; color: #fff; }
+
+@media screen and (max-width: 600px) {
+  body { font-size: 14px; }
+  main { padding: 6px; }
+  #map { height: 510px; }
+  .toolbar input { width: 100%; margin-top: 6px; }
+  .toolbar button { margin: 6px 4px 0 0; }
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>FUI TASKS</h1>
+  <p class="subtitle">priorize o que move você</p>
+  <nav aria-label="Navegação principal">
+    <button id="tabList" class="on" onclick="showTab('list')">Lista</button>
+    <button id="tabMap" onclick="showTab('map')">Mapa</button>
+  </nav>
+</header>
+
+<main>
+  <section id="viewList">
+    <div class="toolbar">
+      <label for="filterCol">Filtrar:</label>
+      <select id="filterCol" onchange="applyFilter()">
+        <option value="">Todas as colunas</option>
+        <option value="name">Tarefa</option>
+        <option value="cat">Categoria</option>
+        <option value="F">Facilidade</option>
+        <option value="U">Urgência</option>
+        <option value="I">Importância</option>
+        <option value="P">Prioridade</option>
+        <option value="done">Concluída</option>
+      </select>
+      <input id="filterVal" type="text" value="" placeholder="texto ou valor" onkeyup="applyFilter()">
+      <button onclick="clearFilter()">Limpar</button>
+    </div>
+    <div id="listStatus" class="status"></div>
+    <div class="table-wrap">
+      <table aria-label="Lista de tarefas">
+        <thead><tr>
+          <th>✓</th>
+          <th><button onclick="sortBy('name')">Tarefa <span id="sortName"></span></button></th>
+          <th><button onclick="sortBy('cat')">Categoria <span id="sortCat"></span></button></th>
+          <th><button onclick="sortBy('F')">F <span id="sortF"></span></button></th>
+          <th><button onclick="sortBy('U')">U <span id="sortU"></span></button></th>
+          <th><button onclick="sortBy('I')">I <span id="sortI"></span></button></th>
+          <th><button onclick="sortBy('P')">P <span id="sortP"></span></button></th>
+        </tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="viewMap" class="hidden">
+    <p class="map-note">Clique em uma categoria para recolher/expandir suas tarefas. Clique em uma tarefa para editar.</p>
+    <div id="map" aria-label="Mapa mental radial"></div>
+  </section>
+</main>
+
+<button class="fab" onclick="openModal(null)" aria-label="Nova tarefa">+</button>
+
+<div id="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+  <div class="modal-box">
+    <h2 id="mTitle">Nova tarefa</h2>
+    <div id="formError" class="error"></div>
+    <label for="fName">Tarefa</label>
+    <input id="fName" type="text" maxlength="160">
+    <label for="fCat">Categoria</label>
+    <input id="fCat" type="text" maxlength="80">
+    <div class="score-fields">
+      <div class="score-field"><label for="fF">Facilidade (F)</label><input id="fF" type="number" min="0" max="3" value="0"></div>
+      <div class="score-field"><label for="fU">Urgência (U)</label><input id="fU" type="number" min="0" max="3" value="0"></div>
+      <div class="score-field"><label for="fI">Importância (I)</label><input id="fI" type="number" min="0" max="3" value="0"></div>
+    </div>
+    <div id="doneField" class="hidden"><label><input id="fDone" type="checkbox"> Tarefa concluída</label></div>
+    <div class="modal-actions">
+      <button onclick="saveTask()">Salvar</button>
+      <button onclick="closeModal()">Cancelar</button>
+      <button id="deleteBtn" class="hidden" onclick="deleteTask()">Excluir</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===== CONFIG =====
+ * P = F^f * U^u * I^i. Este objeto é o ponto único para ajustar os pesos.
+ * Os valores 0 continuam válidos conforme o modelo de dados solicitado.
+ */
+var CONFIG = { storageKey: 'fui_tasks_v1', weights: { f: 3, u: 2, i: 1 } };
+
+/* ===== DADOS E ESTADO ===== */
+var State = {
+  tasks: [], editingId: null, activeTab: 'list', sortKey: 'P', sortAsc: false,
+  filterCol: '', filterVal: '', collapsed: {}
+};
+
+function loadData() {
+  var raw, parsed, i, t;
+  try {
+    raw = window.localStorage.getItem(CONFIG.storageKey);
+    parsed = raw ? JSON.parse(raw) : [];
+    State.tasks = Object.prototype.toString.call(parsed) === '[object Array]' ? parsed : [];
+  } catch (e) { State.tasks = []; }
+  for (i = 0; i < State.tasks.length; i++) {
+    t = State.tasks[i];
+    t.id = Number(t.id) || new Date().getTime() + i;
+    t.name = String(t.name || '');
+    t.cat = String(t.cat || 'Geral');
+    t.F = clampScore(t.F); t.U = clampScore(t.U); t.I = clampScore(t.I);
+    t.done = t.done === true;
+  }
+}
+function persistData() {
+  try { window.localStorage.setItem(CONFIG.storageKey, JSON.stringify(State.tasks)); }
+  catch (e) { /* armazenamento indisponível: a sessão continua utilizável */ }
+}
+function clampScore(value) {
+  var n = parseInt(value, 10);
+  if (isNaN(n)) { return 0; }
+  if (n < 0) { return 0; }
+  if (n > 3) { return 3; }
+  return n;
+}
+function calcP(task) {
+  return Math.pow(task.F, CONFIG.weights.f) * Math.pow(task.U, CONFIG.weights.u) * Math.pow(task.I, CONFIG.weights.i);
+}
+function esc(value) {
+  return String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+function findTask(id) {
+  var i;
+  for (i = 0; i < State.tasks.length; i++) { if (State.tasks[i].id === id) { return State.tasks[i]; } }
+  return null;
+}
+function nextId() {
+  var id = new Date().getTime(), i, used = true;
+  while (used) {
+    used = false;
+    for (i = 0; i < State.tasks.length; i++) { if (State.tasks[i].id === id) { used = true; id += 1; break; } }
+  }
+  return id;
+}
+
+/* ===== LISTA ===== */
+function matchesFilter(task) {
+  var col = State.filterCol, needle = State.filterVal.toLowerCase(), value;
+  if (!col || !needle) { return true; }
+  if (col === 'P') { value = String(calcP(task)); }
+  else if (col === 'done') { value = task.done ? 'sim concluída yes true' : 'não pendente no false'; }
+  else { value = String(task[col]); }
+  return value.toLowerCase().indexOf(needle) !== -1;
+}
+function compareTasks(a, b) {
+  var x = State.sortKey === 'P' ? calcP(a) : a[State.sortKey];
+  var y = State.sortKey === 'P' ? calcP(b) : b[State.sortKey];
+  var result;
+  if (typeof x === 'string') { result = x.toLowerCase().localeCompare(y.toLowerCase()); }
+  else { result = x - y; }
+  if (result === 0) { result = a.id - b.id; }
+  return State.sortAsc ? result : -result;
+}
+function sortBy(key) {
+  if (State.sortKey === key) { State.sortAsc = !State.sortAsc; }
+  else { State.sortKey = key; State.sortAsc = false; }
+  renderList();
+}
+function applyFilter() {
+  State.filterCol = document.getElementById('filterCol').value;
+  State.filterVal = document.getElementById('filterVal').value;
+  renderList();
+}
+function clearFilter() {
+  document.getElementById('filterCol').value = '';
+  document.getElementById('filterVal').value = '';
+  State.filterCol = ''; State.filterVal = '';
+  renderList();
+}
+function renderSortIndicators() {
+  var keys = ['name', 'cat', 'F', 'U', 'I', 'P'], i, node;
+  for (i = 0; i < keys.length; i++) {
+    node = document.getElementById('sort' + keys[i].charAt(0).toUpperCase() + keys[i].slice(1));
+    if (node) { node.innerHTML = State.sortKey === keys[i] ? (State.sortAsc ? '▲' : '▼') : ''; }
+  }
+}
+function renderList() {
+  var list = [], i, t, html = '', visible;
+  for (i = 0; i < State.tasks.length; i++) { if (matchesFilter(State.tasks[i])) { list.push(State.tasks[i]); } }
+  list.sort(compareTasks);
+  visible = list.length;
+  for (i = 0; i < list.length; i++) {
+    t = list[i];
+    html += '<tr class="' + (t.done ? 'done' : '') + '">';
+    html += '<td><input type="checkbox" ' + (t.done ? 'checked="checked" ' : '') + 'onclick="toggleDone(' + t.id + ')" aria-label="Concluir ' + esc(t.name) + '"></td>';
+    html += '<td class="task-name"><a href="#" onclick="openModal(' + t.id + '); return false;">' + esc(t.name || '(sem nome)') + '</a></td>';
+    html += '<td>' + esc(t.cat) + '</td><td>' + t.F + '</td><td>' + t.U + '</td><td>' + t.I + '</td>';
+    html += '<td><b>' + calcP(t) + '</b></td></tr>';
+  }
+  if (!html) { html = '<tr><td colspan="7" class="empty">Nenhuma tarefa encontrada. Use o botão + para criar uma.</td></tr>'; }
+  document.getElementById('rows').innerHTML = html;
+  document.getElementById('listStatus').innerHTML = visible + ' tarefa(s) visível(is) de ' + State.tasks.length + ' cadastrada(s).';
+  renderSortIndicators();
+}
+function toggleDone(id) {
+  var t = findTask(id);
+  if (t) { t.done = !t.done; persistData(); renderAll(); }
+}
+
+/* ===== MAPA RADIAL ===== */
+function mapGroups() {
+  var groups = {}, names = [], i, t, key;
+  for (i = 0; i < State.tasks.length; i++) {
+    t = State.tasks[i]; key = t.cat || 'Geral';
+    if (!groups[key]) { groups[key] = []; names.push(key); }
+    groups[key].push(t);
+  }
+  return { groups: groups, names: names };
+}
+function nodeSize(priority) {
+  var p = Math.max(0, Math.min(125, priority));
+  return 28 + (p / 125) * 44;
+}
+function drawEdge(map, x1, y1, x2, y2) {
+  var dx = x2 - x1, dy = y2 - y1, edge = document.createElement('div');
+  var length = Math.sqrt(dx * dx + dy * dy), degree = Math.atan2(dy, dx) * 180 / Math.PI;
+  var transform = 'rotate(' + degree + 'deg)';
+  edge.className = 'edge'; edge.style.left = x1 + 'px'; edge.style.top = y1 + 'px'; edge.style.width = length + 'px';
+  edge.style.transform = transform; edge.style.webkitTransform = transform; map.appendChild(edge);
+}
+function addNode(map, x, y, width, height, label, className, id, action) {
+  var node = document.createElement('div'), span = document.createElement('span');
+  node.className = 'node ' + className; node.style.left = (x - width / 2) + 'px'; node.style.top = (y - height / 2) + 'px'; node.style.width = width + 'px'; node.style.height = height + 'px';
+  span.innerHTML = label; node.appendChild(span);
+  if (action === 'task') { node.onclick = function () { openModal(id); }; }
+  if (action === 'cat') { node.onclick = function () { State.collapsed[id] = !State.collapsed[id]; renderMap(); }; }
+  map.appendChild(node);
+}
+function renderMap() {
+  var map = document.getElementById('map'), data = mapGroups(), names = data.names, groups = data.groups;
+  var width = map.offsetWidth || 700, height = map.offsetHeight || 610, cx = width / 2, cy = height / 2;
+  var radius = Math.min(160, Math.max(105, Math.min(width, height) / 3.2)), i, j, category, tasks, angle, catX, catY, step, taskAngle, task, size, taskX, taskY;
+  map.innerHTML = '';
+  addNode(map, cx, cy, 72, 46, 'ME', 'center', null, null);
+  if (!names.length) { addNode(map, cx, cy + 75, 170, 38, 'Adicione uma tarefa', 'cat', null, null); return; }
+  step = (Math.PI * 2) / names.length;
+  for (i = 0; i < names.length; i++) {
+    category = names[i]; tasks = groups[category]; angle = i * step - Math.PI / 2;
+    catX = cx + Math.cos(angle) * radius; catY = cy + Math.sin(angle) * radius;
+    drawEdge(map, cx, cy, catX, catY);
+    addNode(map, catX, catY, 86, 44, esc(category), 'cat', category, 'cat');
+    if (State.collapsed[category]) { continue; }
+    for (j = 0; j < tasks.length; j++) {
+      task = tasks[j]; size = nodeSize(calcP(task));
+      taskAngle = angle - Math.PI / 2.6 + (tasks.length > 1 ? (Math.PI / 1.3) * j / (tasks.length - 1) : 0);
+      taskX = catX + Math.cos(taskAngle) * (78 + size / 2); taskY = catY + Math.sin(taskAngle) * (78 + size / 2);
+      drawEdge(map, catX, catY, taskX, taskY);
+      addNode(map, taskX, taskY, size, size, esc(task.name || '(sem nome)') + '<br>P=' + calcP(task), task.done ? 'done' : '', task.id, 'task');
+    }
+  }
+}
+
+/* ===== MODAL ===== */
+function openModal(id) {
+  var task = id ? findTask(id) : null;
+  State.editingId = task ? task.id : null;
+  document.getElementById('mTitle').innerHTML = task ? 'Editar tarefa' : 'Nova tarefa';
+  document.getElementById('formError').innerHTML = '';
+  document.getElementById('fName').value = task ? task.name : '';
+  document.getElementById('fCat').value = task ? task.cat : '';
+  document.getElementById('fF').value = task ? task.F : 0;
+  document.getElementById('fU').value = task ? task.U : 0;
+  document.getElementById('fI').value = task ? task.I : 0;
+  document.getElementById('fDone').checked = task ? task.done : false;
+  document.getElementById('doneField').className = task ? '' : 'hidden';
+  document.getElementById('deleteBtn').className = task ? '' : 'hidden';
+  document.getElementById('modal').style.display = 'block';
+  document.getElementById('fName').focus();
+}
+function closeModal() { document.getElementById('modal').style.display = 'none'; State.editingId = null; }
+function saveTask() {
+  var name = document.getElementById('fName').value.replace(/^\s+|\s+$/g, '');
+  var cat = document.getElementById('fCat').value.replace(/^\s+|\s+$/g, '');
+  var task, i;
+  if (!name) { document.getElementById('formError').innerHTML = 'Informe o nome da tarefa.'; return; }
+  task = { id: State.editingId || nextId(), name: name, cat: cat || 'Geral', F: clampScore(document.getElementById('fF').value), U: clampScore(document.getElementById('fU').value), I: clampScore(document.getElementById('fI').value), done: State.editingId ? document.getElementById('fDone').checked : false };
+  if (State.editingId) { for (i = 0; i < State.tasks.length; i++) { if (State.tasks[i].id === State.editingId) { State.tasks[i] = task; break; } } }
+  else { State.tasks.push(task); }
+  persistData(); closeModal(); renderAll();
+}
+function deleteTask() {
+  var i, remaining = [];
+  if (!State.editingId) { return; }
+  for (i = 0; i < State.tasks.length; i++) { if (State.tasks[i].id !== State.editingId) { remaining.push(State.tasks[i]); } }
+  State.tasks = remaining; persistData(); closeModal(); renderAll();
+}
+
+/* ===== NAVEGAÇÃO ===== */
+function showTab(which) {
+  State.activeTab = which;
+  document.getElementById('viewList').className = which === 'list' ? '' : 'hidden';
+  document.getElementById('viewMap').className = which === 'map' ? '' : 'hidden';
+  document.getElementById('tabList').className = which === 'list' ? 'on' : '';
+  document.getElementById('tabMap').className = which === 'map' ? 'on' : '';
+  if (which === 'map') { renderMap(); }
+}
+function renderAll() { renderList(); renderMap(); }
+
+loadData();
+renderAll();
+</script>
+</body>
+</html>

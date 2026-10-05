@@ -1,0 +1,12 @@
+{
+  "name": "fui-tasks-virtual-tcc",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Portal acessível FUI Tasks com Virtual TCC",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

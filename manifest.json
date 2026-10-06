@@ -1,0 +1,9 @@
+{
+  "name": "FUI Tasks",
+  "short_name": "FUI",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "description": "Ferramentas acessíveis e simples para tarefas e reflexão."
+}

@@ -4,7 +4,7 @@ Portal leve e acessível para Kindle e navegadores simples. A página inicial of
 
 ## Hugging Face
 
-O servidor usa `https://router.huggingface.co/v1/chat/completions`, mantendo `HF_TOKEN` somente no ambiente do servidor. O modelo padrão é `Qwen/Qwen2.5-7B-Instruct`; ele pode ser trocado pela variável `HF_MODEL` sem editar o código.
+O servidor usa `https://router.huggingface.co/v1/chat/completions`, mantendo `HF_TOKEN` somente no ambiente do servidor. O modelo padrão é `Qwen/Qwen3-4B-Instruct-2507`; ele pode ser trocado pela variável `HF_MODEL` sem editar o código.
 
 Não existe uma chave de API gratuita e ilimitada garantida. Os limites dependem da conta, do modelo e do provedor selecionado pelo Hugging Face. O app trata ausência de chave, limites e indisponibilidade sem expor o token: sem `HF_TOKEN`, o Virtual TCC funciona em modo demonstração honesto.
 
@@ -13,7 +13,7 @@ Para ativar a IA, crie uma conta no Hugging Face, gere um token de acesso com pe
 ## Teste local
 
 ```bash
-HF_TOKEN=seu_token HF_MODEL=Qwen/Qwen2.5-7B-Instruct node server.js
+HF_TOKEN=seu_token HF_MODEL=Qwen/Qwen3-4B-Instruct-2507 node server.js
 ```
 
 Sem token:

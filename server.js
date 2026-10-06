@@ -7,7 +7,7 @@ var tccPrompt = require('./server/tcc-prompt').SYSTEM_PROMPT;
 var PORT = parseInt(process.env.PORT || '3000', 10);
 var PUBLIC_DIR = path.join(__dirname, 'public');
 var HF_TOKEN = process.env.HF_TOKEN || '';
-var HF_MODEL = process.env.HF_MODEL || 'Qwen/Qwen2.5-7B-Instruct';
+var HF_MODEL = process.env.HF_MODEL || 'Qwen/Qwen3-4B-Instruct-2507';
 var MAX_BODY = 1024 * 1024;
 
 var mime = {

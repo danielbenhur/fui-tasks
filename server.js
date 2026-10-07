@@ -8,6 +8,8 @@ var PORT = parseInt(process.env.PORT || '3000', 10);
 var PUBLIC_DIR = path.join(__dirname, 'public');
 var HF_TOKEN = process.env.HF_TOKEN || '';
 var HF_MODEL = process.env.HF_MODEL || 'Qwen/Qwen3-4B-Instruct-2507';
+var GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
+var GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-flash-lite-latest';
 var MAX_BODY = 1024 * 1024;
 var ALLOWED_ORIGINS = {
   'https://danielbenhur.github.io': true,
@@ -100,6 +102,10 @@ function demoReply(messages, explanation) {
 }
 
 function providerExplanation(error) {
+  if (error && error.provider === 'gemini' && (error.status === 401 || error.status === 403)) { return 'a chave do Google Gemini foi recusada'; }
+  if (error && error.provider === 'gemini' && error.status === 429) { return 'o limite gratuito do Google Gemini foi atingido temporariamente'; }
+  if (error && error.provider === 'gemini' && error.status === 404) { return 'o modelo configurado do Google Gemini não está disponível'; }
+  if (error && error.provider === 'gemini') { return 'o Google Gemini não respondeu normalmente'; }
   if (error && error.status === 402) { return 'a conta do Hugging Face não tem créditos de inferência disponíveis neste momento'; }
   if (error && error.status === 401) { return 'o token do Hugging Face foi recusado'; }
   if (error && error.status === 429) { return 'o limite temporário do Hugging Face foi atingido'; }
@@ -146,6 +152,44 @@ function callHuggingFace(messages, callback) {
   request.end();
 }
 
+function callGemini(messages, callback) {
+  var contents = [], i, item, payload, request;
+  for (i = 0; i < messages.length; i++) {
+    item = messages[i];
+    contents.push({ role: item.role === 'assistant' ? 'model' : 'user', parts: [{ text: item.content }] });
+  }
+  payload = JSON.stringify({
+    systemInstruction: { parts: [{ text: tccPrompt }] },
+    contents: contents,
+    generationConfig: { temperature: 0.35, maxOutputTokens: 320 }
+  });
+  request = require('https').request({
+    hostname: 'generativelanguage.googleapis.com',
+    path: '/v1beta/models/' + encodeURIComponent(GEMINI_MODEL) + ':generateContent?key=' + encodeURIComponent(GEMINI_API_KEY),
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload) },
+    timeout: 45000
+  }, function (upstream) {
+    var chunks = [];
+    upstream.on('data', function (chunk) { chunks.push(chunk); });
+    upstream.on('end', function () {
+      var raw = Buffer.concat(chunks).toString('utf8'), data, parts, content, providerError;
+      try { data = JSON.parse(raw); } catch (e) { providerError = new Error('gemini_invalid_json'); providerError.provider = 'gemini'; providerError.status = upstream.statusCode; callback(providerError); return; }
+      if (upstream.statusCode < 200 || upstream.statusCode >= 300 || data.error) {
+        providerError = new Error('gemini_' + upstream.statusCode); providerError.provider = 'gemini'; providerError.status = upstream.statusCode; callback(providerError); return;
+      }
+      parts = data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts;
+      content = parts && parts.map(function (part) { return part.text || ''; }).join('').trim();
+      if (!content) { providerError = new Error('gemini_empty_response'); providerError.provider = 'gemini'; providerError.status = 200; callback(providerError); return; }
+      callback(null, content);
+    });
+  });
+  request.on('timeout', function () { var timeoutError = new Error('gemini_timeout'); timeoutError.provider = 'gemini'; request.destroy(timeoutError); });
+  request.on('error', function (error) { error.provider = 'gemini'; callback(error); });
+  request.write(payload);
+  request.end();
+}
+
 function handleChat(req, res) {
   readBody(req, function (error, body) {
     var messages, lastUser, reply;
@@ -155,14 +199,14 @@ function handleChat(req, res) {
     if (messages.length && messages[messages.length - 1].role === 'user') { lastUser = messages[messages.length - 1].content; }
     if (!lastUser) { sendJson(req, res, 400, { error: 'missing_message', message: 'Escreva uma mensagem antes de enviar.' }); return; }
     if (hasSafetySignal(lastUser)) { sendJson(req, res, 200, { reply: safetyReply(), safety: true, mode: 'safety' }); return; }
-    if (!HF_TOKEN) { sendJson(req, res, 200, { reply: demoReply(messages, 'nenhuma chave do Hugging Face foi configurada'), mode: 'demo', configured: false }); return; }
-    callHuggingFace(messages, function (providerError, text) {
+    if (!GEMINI_API_KEY && !HF_TOKEN) { sendJson(req, res, 200, { reply: demoReply(messages, 'nenhuma chave de provedor de IA foi configurada'), mode: 'demo', configured: false }); return; }
+    (GEMINI_API_KEY ? callGemini : callHuggingFace)(messages, function (providerError, text) {
       if (providerError) {
         reply = demoReply(messages, providerExplanation(providerError));
         sendJson(req, res, 200, { reply: reply, mode: 'fallback', configured: true, providerStatus: providerError.status || 0, warning: providerExplanation(providerError) + '. Esta resposta é apenas demonstrativa.' });
         return;
       }
-      sendJson(req, res, 200, { reply: text, mode: 'huggingface', configured: true, model: HF_MODEL });
+      sendJson(req, res, 200, { reply: text, mode: GEMINI_API_KEY ? 'gemini' : 'huggingface', configured: true, provider: GEMINI_API_KEY ? 'Google Gemini' : 'Hugging Face', model: GEMINI_API_KEY ? GEMINI_MODEL : HF_MODEL });
     });
   });
 }
@@ -202,7 +246,7 @@ var server = http.createServer(function (req, res) {
     return;
   }
   if (req.method === 'GET' && req.url.split('?')[0] === '/api/tcc/status') {
-    sendJson(req, res, 200, { provider: 'Hugging Face Inference Providers', configured: !!HF_TOKEN, model: HF_MODEL, freeTier: 'O limite depende da conta e do provedor; não é ilimitado.' }); return;
+    sendJson(req, res, 200, { provider: GEMINI_API_KEY ? 'Google Gemini' : HF_TOKEN ? 'Hugging Face Inference Providers' : 'Nenhum provedor', configured: !!(GEMINI_API_KEY || HF_TOKEN), model: GEMINI_API_KEY ? GEMINI_MODEL : HF_MODEL, freeTier: 'Os limites dependem da conta e do provedor; não são ilimitados.' }); return;
   }
   if (req.method === 'POST' && req.url.split('?')[0] === '/api/tcc/chat') { handleChat(req, res); return; }
   if (req.method !== 'GET' && req.method !== 'HEAD') { sendText(req, res, 405, 'Método não permitido'); return; }

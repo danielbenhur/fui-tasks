@@ -4,16 +4,16 @@ Portal leve e acessível para Kindle e navegadores simples. A página inicial of
 
 ## Hugging Face
 
-O servidor usa `https://router.huggingface.co/v1/chat/completions`, mantendo `HF_TOKEN` somente no ambiente do servidor. O modelo padrão é `Qwen/Qwen3-4B-Instruct-2507`; ele pode ser trocado pela variável `HF_MODEL` sem editar o código.
+O servidor prioriza a API Google Gemini em `https://generativelanguage.googleapis.com`, mantendo `GEMINI_API_KEY` somente no ambiente do servidor. O modelo padrão é `gemini-flash-lite-latest`, um alias leve disponível para conversas curtas; ele pode ser trocado pela variável `GEMINI_MODEL`. O Hugging Face (`HF_TOKEN`) permanece como alternativa quando não há chave Gemini.
 
 Não existe uma chave de API gratuita e ilimitada garantida. Os limites dependem da conta, do modelo e do provedor selecionado pelo Hugging Face. Um token válido não garante créditos: quando a API responde HTTP 402 por falta de créditos, o Virtual TCC informa essa situação e usa uma resposta demonstrativa, sem fingir que a IA respondeu.
 
-Para ativar a IA, crie uma conta no Hugging Face, gere um token de acesso com permissão mínima para inferência e configure o valor como secret de ambiente do servidor com o nome `HF_TOKEN`. Nunca coloque o token no `public/`, em JavaScript do navegador, no Git ou em mensagens.
+Para ativar a IA com Gemini, gere uma chave no Google AI Studio e salve-a como secret de ambiente do servidor com o nome `GEMINI_API_KEY`. Nunca coloque a chave no `public/`, em JavaScript do navegador, no Git ou em mensagens. O modelo pode ser alterado com `GEMINI_MODEL`.
 
 ## Teste local
 
 ```bash
-HF_TOKEN=seu_token HF_MODEL=Qwen/Qwen3-4B-Instruct-2507 node server.js
+GEMINI_API_KEY=sua_chave GEMINI_MODEL=gemini-flash-lite-latest node server.js
 ```
 
 Sem token:

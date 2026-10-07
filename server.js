@@ -9,6 +9,11 @@ var PUBLIC_DIR = path.join(__dirname, 'public');
 var HF_TOKEN = process.env.HF_TOKEN || '';
 var HF_MODEL = process.env.HF_MODEL || 'Qwen/Qwen3-4B-Instruct-2507';
 var MAX_BODY = 1024 * 1024;
+var ALLOWED_ORIGINS = {
+  'https://danielbenhur.github.io': true,
+  'http://localhost:3000': true,
+  'http://127.0.0.1:3000': true
+};
 
 var mime = {
   '.html': 'text/html; charset=utf-8',
@@ -20,8 +25,20 @@ var mime = {
   '.ico': 'image/x-icon'
 };
 
-function sendJson(res, status, value) {
+function setCorsHeaders(req, res) {
+  var origin = req.headers.origin || '';
+  if (ALLOWED_ORIGINS[origin]) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Access-Control-Max-Age', '600');
+    res.setHeader('Vary', 'Origin');
+  }
+}
+
+function sendJson(req, res, status, value) {
   var body = JSON.stringify(value);
+  setCorsHeaders(req, res);
   res.writeHead(status, {
     'Content-Type': 'application/json; charset=utf-8',
     'Cache-Control': 'no-store',
@@ -30,7 +47,8 @@ function sendJson(res, status, value) {
   res.end(body);
 }
 
-function sendText(res, status, text) {
+function sendText(req, res, status, text) {
+  setCorsHeaders(req, res);
   res.writeHead(status, {
     'Content-Type': 'text/plain; charset=utf-8',
     'Cache-Control': 'no-store',
@@ -75,10 +93,17 @@ function safetyReply() {
   return 'Sinto muito que você esteja passando por algo tão intenso. Neste momento, a prioridade é sua segurança, não analisar pensamentos. Você corre perigo imediato ou tem um plano para se ferir ou ferir alguém? Se sim, ligue agora para o serviço de emergência da sua região (no Brasil, SAMU 192 ou Polícia 190), vá a um pronto-socorro ou peça a uma pessoa de confiança para ficar com você. No Brasil, o CVV atende pelo 188. Se estiver em outro país, use o número local de emergência ou uma linha de crise. Não permaneça sozinho(a) enquanto houver risco.';
 }
 
-function demoReply(messages) {
+function demoReply(messages, explanation) {
   var last = messages.length ? messages[messages.length - 1].content : '';
   if (!last) { return 'Estou no modo demonstração. O que está acontecendo que você gostaria de compreender ou lidar melhor?'; }
-  return 'Entendi que você trouxe “' + last.slice(0, 180) + (last.length > 180 ? '…”' : '”') + '. Estou no modo demonstração porque nenhuma chave do Hugging Face foi configurada. Quando a IA estiver conectada, vamos investigar isso com calma, uma pergunta por vez. Qual foi uma situação específica e recente em que isso aconteceu?';
+  return 'Entendi que você trouxe “' + last.slice(0, 180) + (last.length > 180 ? '…”' : '”') + '. Estou no modo demonstração porque ' + explanation + '. Quando a IA estiver disponível, vamos investigar isso com calma, uma pergunta por vez. Qual foi uma situação específica e recente em que isso aconteceu?';
+}
+
+function providerExplanation(error) {
+  if (error && error.status === 402) { return 'a conta do Hugging Face não tem créditos de inferência disponíveis neste momento'; }
+  if (error && error.status === 401) { return 'o token do Hugging Face foi recusado'; }
+  if (error && error.status === 429) { return 'o limite temporário do Hugging Face foi atingido'; }
+  return 'o provedor de IA não respondeu normalmente';
 }
 
 function callHuggingFace(messages, callback) {
@@ -106,7 +131,9 @@ function callHuggingFace(messages, callback) {
       var raw = Buffer.concat(chunks).toString('utf8'), data, content;
       try { data = JSON.parse(raw); } catch (e) { callback(new Error('provider_invalid_json')); return; }
       if (upstream.statusCode < 200 || upstream.statusCode >= 300 || data.error) {
-        callback(new Error('provider_' + upstream.statusCode)); return;
+        var providerError = new Error('provider_' + upstream.statusCode);
+        providerError.status = upstream.statusCode;
+        callback(providerError); return;
       }
       content = data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
       if (!content) { callback(new Error('provider_empty_response')); return; }
@@ -122,20 +149,20 @@ function callHuggingFace(messages, callback) {
 function handleChat(req, res) {
   readBody(req, function (error, body) {
     var messages, lastUser, reply;
-    if (error) { sendJson(res, 400, { error: 'invalid_request', message: 'Envie uma conversa JSON válida.' }); return; }
+    if (error) { sendJson(req, res, 400, { error: 'invalid_request', message: 'Envie uma conversa JSON válida.' }); return; }
     messages = cleanMessages(body && body.messages);
     lastUser = '';
     if (messages.length && messages[messages.length - 1].role === 'user') { lastUser = messages[messages.length - 1].content; }
-    if (!lastUser) { sendJson(res, 400, { error: 'missing_message', message: 'Escreva uma mensagem antes de enviar.' }); return; }
-    if (hasSafetySignal(lastUser)) { sendJson(res, 200, { reply: safetyReply(), safety: true, mode: 'safety' }); return; }
-    if (!HF_TOKEN) { sendJson(res, 200, { reply: demoReply(messages), mode: 'demo', configured: false }); return; }
+    if (!lastUser) { sendJson(req, res, 400, { error: 'missing_message', message: 'Escreva uma mensagem antes de enviar.' }); return; }
+    if (hasSafetySignal(lastUser)) { sendJson(req, res, 200, { reply: safetyReply(), safety: true, mode: 'safety' }); return; }
+    if (!HF_TOKEN) { sendJson(req, res, 200, { reply: demoReply(messages, 'nenhuma chave do Hugging Face foi configurada'), mode: 'demo', configured: false }); return; }
     callHuggingFace(messages, function (providerError, text) {
       if (providerError) {
-        reply = demoReply(messages);
-        sendJson(res, 200, { reply: reply, mode: 'fallback', configured: true, warning: 'O provedor não respondeu agora; esta resposta é apenas uma orientação demonstrativa. Tente novamente mais tarde.' });
+        reply = demoReply(messages, providerExplanation(providerError));
+        sendJson(req, res, 200, { reply: reply, mode: 'fallback', configured: true, providerStatus: providerError.status || 0, warning: providerExplanation(providerError) + '. Esta resposta é apenas demonstrativa.' });
         return;
       }
-      sendJson(res, 200, { reply: text, mode: 'huggingface', configured: true, model: HF_MODEL });
+      sendJson(req, res, 200, { reply: text, mode: 'huggingface', configured: true, model: HF_MODEL });
     });
   });
 }
@@ -150,7 +177,7 @@ function safeFilePath(urlPath) {
 
 function serveStatic(req, res) {
   var file = safeFilePath(req.url), extension, stream;
-  if (!file || file.indexOf(PUBLIC_DIR) !== 0) { sendText(res, 404, 'Não encontrado'); return; }
+  if (!file || file.indexOf(PUBLIC_DIR) !== 0) { sendText(req, res, 404, 'Não encontrado'); return; }
   fs.stat(file, function (error, stat) {
     if (!error && stat.isFile()) {
       extension = path.extname(file).toLowerCase();
@@ -163,16 +190,22 @@ function serveStatic(req, res) {
       stream = fs.createReadStream(file); stream.pipe(res); return;
     }
     if (!path.extname(file)) { fs.createReadStream(path.join(PUBLIC_DIR, 'index.html')).pipe(res); return; }
-    sendText(res, 404, 'Não encontrado');
+    sendText(req, res, 404, 'Não encontrado');
   });
 }
 
 var server = http.createServer(function (req, res) {
+  if (req.method === 'OPTIONS' && /^\/api\//.test(req.url.split('?')[0])) {
+    setCorsHeaders(req, res);
+    res.writeHead(ALLOWED_ORIGINS[req.headers.origin || ''] ? 204 : 403, { 'Cache-Control': 'no-store' });
+    res.end();
+    return;
+  }
   if (req.method === 'GET' && req.url.split('?')[0] === '/api/tcc/status') {
-    sendJson(res, 200, { provider: 'Hugging Face Inference Providers', configured: !!HF_TOKEN, model: HF_MODEL, freeTier: 'O limite depende da conta e do provedor; não é ilimitado.' }); return;
+    sendJson(req, res, 200, { provider: 'Hugging Face Inference Providers', configured: !!HF_TOKEN, model: HF_MODEL, freeTier: 'O limite depende da conta e do provedor; não é ilimitado.' }); return;
   }
   if (req.method === 'POST' && req.url.split('?')[0] === '/api/tcc/chat') { handleChat(req, res); return; }
-  if (req.method !== 'GET' && req.method !== 'HEAD') { sendText(res, 405, 'Método não permitido'); return; }
+  if (req.method !== 'GET' && req.method !== 'HEAD') { sendText(req, res, 405, 'Método não permitido'); return; }
   serveStatic(req, res);
 });
 

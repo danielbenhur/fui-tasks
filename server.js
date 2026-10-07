@@ -1,4 +1,4 @@
-/* FUI Tasks / Virtual TCC — servidor mínimo sem framework. */
+/* FUI Tasks / Virtual TCC - servidor minimo sem framework. */
 var http = require('http');
 var fs = require('fs');
 var path = require('path');
@@ -88,28 +88,28 @@ function cleanMessages(messages) {
 }
 
 function hasSafetySignal(text) {
-  return /\b(suicid|tirar\s+minha\s+vida|me\s+matar|matar-me|não\s+quero\s+viver|nao\s+quero\s+viver|me\s+(?:ferir|machucar)|auto?les[aã]o|cortar\s+(?:me|meus)|viol[eê]ncia\s+iminente|matar\s+algu[eé]m|n[aã]o\s+consigo\s+ficar\s+segur[oa])\b/i.test(String(text || ''));
+  return /\b(suicid|tirar\s+minha\s+vida|me\s+matar|matar-me|nao\s+quero\s+viver|nao\s+quero\s+viver|me\s+(?:ferir|machucar)|auto?les[aa]o|cortar\s+(?:me|meus)|viol[ee]ncia\s+iminente|matar\s+algu[ee]m|n[aa]o\s+consigo\s+ficar\s+segur[oa])\b/i.test(String(text || ''));
 }
 
 function safetyReply() {
-  return 'Sinto muito que você esteja passando por algo tão intenso. Neste momento, a prioridade é sua segurança, não analisar pensamentos. Você corre perigo imediato ou tem um plano para se ferir ou ferir alguém? Se sim, ligue agora para o serviço de emergência da sua região (no Brasil, SAMU 192 ou Polícia 190), vá a um pronto-socorro ou peça a uma pessoa de confiança para ficar com você. No Brasil, o CVV atende pelo 188. Se estiver em outro país, use o número local de emergência ou uma linha de crise. Não permaneça sozinho(a) enquanto houver risco.';
+  return 'Sinto muito que voce esteja passando por algo tao intenso. Neste momento, a prioridade e sua seguranca, nao analisar pensamentos. Voce corre perigo imediato ou tem um plano para se ferir ou ferir alguem? Se sim, ligue agora para o servico de emergencia da sua regiao (no Brasil, SAMU 192 ou Policia 190), va a um pronto-socorro ou peca a uma pessoa de confianca para ficar com voce. No Brasil, o CVV atende pelo 188. Se estiver em outro pais, use o numero local de emergencia ou uma linha de crise. Nao permaneca sozinho(a) enquanto houver risco.';
 }
 
 function demoReply(messages, explanation) {
   var last = messages.length ? messages[messages.length - 1].content : '';
-  if (!last) { return 'Estou no modo demonstração. O que está acontecendo que você gostaria de compreender ou lidar melhor?'; }
-  return 'Entendi que você trouxe “' + last.slice(0, 180) + (last.length > 180 ? '…”' : '”') + '. Estou no modo demonstração porque ' + explanation + '. Quando a IA estiver disponível, vamos investigar isso com calma, uma pergunta por vez. Qual foi uma situação específica e recente em que isso aconteceu?';
+  if (!last) { return 'Estou no modo demonstracao. O que esta acontecendo que voce gostaria de compreender ou lidar melhor?'; }
+  return 'Entendi que voce trouxe "' + last.slice(0, 180) + (last.length > 180 ? '..."' : '"') + '. Estou no modo demonstracao porque ' + explanation + '. Quando a IA estiver disponivel, vamos investigar isso com calma, uma pergunta por vez. Qual foi uma situacao especifica e recente em que isso aconteceu?';
 }
 
 function providerExplanation(error) {
   if (error && error.provider === 'gemini' && (error.status === 401 || error.status === 403)) { return 'a chave do Google Gemini foi recusada'; }
   if (error && error.provider === 'gemini' && error.status === 429) { return 'o limite gratuito do Google Gemini foi atingido temporariamente'; }
-  if (error && error.provider === 'gemini' && error.status === 404) { return 'o modelo configurado do Google Gemini não está disponível'; }
-  if (error && error.provider === 'gemini') { return 'o Google Gemini não respondeu normalmente'; }
-  if (error && error.status === 402) { return 'a conta do Hugging Face não tem créditos de inferência disponíveis neste momento'; }
+  if (error && error.provider === 'gemini' && error.status === 404) { return 'o modelo configurado do Google Gemini nao esta disponivel'; }
+  if (error && error.provider === 'gemini') { return 'o Google Gemini nao respondeu normalmente'; }
+  if (error && error.status === 402) { return 'a conta do Hugging Face nao tem creditos de inferencia disponiveis neste momento'; }
   if (error && error.status === 401) { return 'o token do Hugging Face foi recusado'; }
-  if (error && error.status === 429) { return 'o limite temporário do Hugging Face foi atingido'; }
-  return 'o provedor de IA não respondeu normalmente';
+  if (error && error.status === 429) { return 'o limite temporario do Hugging Face foi atingido'; }
+  return 'o provedor de IA nao respondeu normalmente';
 }
 
 function callHuggingFace(messages, callback) {
@@ -193,7 +193,7 @@ function callGemini(messages, callback) {
 function handleChat(req, res) {
   readBody(req, function (error, body) {
     var messages, lastUser, reply;
-    if (error) { sendJson(req, res, 400, { error: 'invalid_request', message: 'Envie uma conversa JSON válida.' }); return; }
+    if (error) { sendJson(req, res, 400, { error: 'invalid_request', message: 'Envie uma conversa JSON valida.' }); return; }
     messages = cleanMessages(body && body.messages);
     lastUser = '';
     if (messages.length && messages[messages.length - 1].role === 'user') { lastUser = messages[messages.length - 1].content; }
@@ -203,7 +203,7 @@ function handleChat(req, res) {
     (GEMINI_API_KEY ? callGemini : callHuggingFace)(messages, function (providerError, text) {
       if (providerError) {
         reply = demoReply(messages, providerExplanation(providerError));
-        sendJson(req, res, 200, { reply: reply, mode: 'fallback', configured: true, providerStatus: providerError.status || 0, warning: providerExplanation(providerError) + '. Esta resposta é apenas demonstrativa.' });
+        sendJson(req, res, 200, { reply: reply, mode: 'fallback', configured: true, providerStatus: providerError.status || 0, warning: providerExplanation(providerError) + '. Esta resposta e apenas demonstrativa.' });
         return;
       }
       sendJson(req, res, 200, { reply: text, mode: GEMINI_API_KEY ? 'gemini' : 'huggingface', configured: true, provider: GEMINI_API_KEY ? 'Google Gemini' : 'Hugging Face', model: GEMINI_API_KEY ? GEMINI_MODEL : HF_MODEL });
@@ -221,7 +221,7 @@ function safeFilePath(urlPath) {
 
 function serveStatic(req, res) {
   var file = safeFilePath(req.url), extension, stream;
-  if (!file || file.indexOf(PUBLIC_DIR) !== 0) { sendText(req, res, 404, 'Não encontrado'); return; }
+  if (!file || file.indexOf(PUBLIC_DIR) !== 0) { sendText(req, res, 404, 'Nao encontrado'); return; }
   fs.stat(file, function (error, stat) {
     if (!error && stat.isFile()) {
       extension = path.extname(file).toLowerCase();
@@ -234,7 +234,7 @@ function serveStatic(req, res) {
       stream = fs.createReadStream(file); stream.pipe(res); return;
     }
     if (!path.extname(file)) { fs.createReadStream(path.join(PUBLIC_DIR, 'index.html')).pipe(res); return; }
-    sendText(req, res, 404, 'Não encontrado');
+    sendText(req, res, 404, 'Nao encontrado');
   });
 }
 
@@ -246,10 +246,10 @@ var server = http.createServer(function (req, res) {
     return;
   }
   if (req.method === 'GET' && req.url.split('?')[0] === '/api/tcc/status') {
-    sendJson(req, res, 200, { provider: GEMINI_API_KEY ? 'Google Gemini' : HF_TOKEN ? 'Hugging Face Inference Providers' : 'Nenhum provedor', configured: !!(GEMINI_API_KEY || HF_TOKEN), model: GEMINI_API_KEY ? GEMINI_MODEL : HF_MODEL, freeTier: 'Os limites dependem da conta e do provedor; não são ilimitados.' }); return;
+    sendJson(req, res, 200, { provider: GEMINI_API_KEY ? 'Google Gemini' : HF_TOKEN ? 'Hugging Face Inference Providers' : 'Nenhum provedor', configured: !!(GEMINI_API_KEY || HF_TOKEN), model: GEMINI_API_KEY ? GEMINI_MODEL : HF_MODEL, freeTier: 'Os limites dependem da conta e do provedor; nao sao ilimitados.' }); return;
   }
   if (req.method === 'POST' && req.url.split('?')[0] === '/api/tcc/chat') { handleChat(req, res); return; }
-  if (req.method !== 'GET' && req.method !== 'HEAD') { sendText(req, res, 405, 'Método não permitido'); return; }
+  if (req.method !== 'GET' && req.method !== 'HEAD') { sendText(req, res, 405, 'Metodo nao permitido'); return; }
   serveStatic(req, res);
 });
 

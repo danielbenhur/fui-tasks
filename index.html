@@ -5,17 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#ffffff">
   <meta name="application-name" content="FUI Tasks">
-  <meta name="description" content="FUI Tasks: um portal leve para tarefas e reflexão guiada.">
+  <meta name="description" content="FUI Tasks: um portal leve para tarefas e reflexao guiada.">
   <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="styles.css">
   <title>FUI / tarefas e cuidado</title>
 </head>
 <body>
   <header class="site-header">
-    <a class="wordmark" href="/" onclick="navigate('home'); return false;" aria-label="FUI, página inicial">FUI <span>/</span></a>
+    <a class="wordmark" href="/" onclick="navigate('home'); return false;" aria-label="FUI, pagina inicial">FUI <span>/</span></a>
     <p class="tagline">ferramentas calmas para o dia</p>
     <nav class="global-nav" aria-label="Aplicativos">
-      <button id="navHome" class="nav-button active" onclick="navigate('home')">Início</button>
+      <button id="navHome" class="nav-button active" onclick="navigate('home')">Inicio</button>
       <button id="navTasks" class="nav-button" onclick="navigate('tasks')">FUI Tasks</button>
       <button id="navTcc" class="nav-button" onclick="navigate('tcc')">Virtual TCC</button>
     </nav>
@@ -25,8 +25,8 @@
     <section id="viewHome" class="view" aria-labelledby="homeTitle">
       <div class="intro-block">
         <p class="eyebrow">PORTAL FUI</p>
-        <h1 id="homeTitle">Escolha uma ferramenta para começar.</h1>
-        <p>Um espaço simples para organizar o que precisa ser feito e examinar o que está pesado — sem excesso de elementos, sem pressa.</p>
+        <h1 id="homeTitle">Escolha uma ferramenta para comecar.</h1>
+        <p>Um espaco simples para organizar o que precisa ser feito e examinar o que esta pesado - sem excesso de elementos, sem pressa.</p>
       </div>
       <div class="app-grid">
         <article class="app-card">
@@ -38,28 +38,28 @@
         <article class="app-card">
           <div class="card-number">02</div>
           <h2>Virtual TCC</h2>
-          <p>Converse em português, uma pergunta por vez, para investigar pensamentos e situações.</p>
+          <p>Converse em portugues, uma pergunta por vez, para investigar pensamentos e situacoes.</p>
           <button class="primary-button" onclick="navigate('tcc')">Abrir Virtual TCC</button>
         </article>
         <article class="app-card muted-card">
           <div class="card-number">03</div>
           <h2>Em breve</h2>
-          <p>Este portal foi feito para receber outras ferramentas pequenas, acessíveis e úteis.</p>
-          <span class="status-text">espaço reservado</span>
+          <p>Este portal foi feito para receber outras ferramentas pequenas, acessiveis e uteis.</p>
+          <span class="status-text">espaco reservado</span>
         </article>
       </div>
-      <aside class="principles" aria-label="Princípios do portal">
-        <strong>Princípios:</strong> simples por padrão · acessível por teclado · leve para conexões lentas · honesto sobre limites
+      <aside class="principles" aria-label="Principios do portal">
+        <strong>Principios:</strong> simples por padrao - acessivel por teclado - leve para conexoes lentas - honesto sobre limites
       </aside>
     </section>
 
     <section id="viewTasks" class="view hidden" aria-labelledby="tasksTitle">
       <div class="section-heading">
         <div><p class="eyebrow">APLICATIVO 01</p><h1 id="tasksTitle">FUI Tasks</h1></div>
-        <button class="text-button" onclick="navigate('home')">← Portal</button>
+        <button class="text-button" onclick="navigate('home')"><- Portal</button>
       </div>
-      <p class="section-lead">Priorize o que move você. A prioridade é <strong>F<sup>3</sup> × U<sup>2</sup> × I</strong>.</p>
-      <div class="subnav" role="tablist" aria-label="Visualização de tarefas">
+      <p class="section-lead">Priorize o que move voce. A prioridade e <strong>F<sup>3</sup>  U<sup>2</sup>  I</strong>.</p>
+      <div class="subnav" role="tablist" aria-label="Visualizacao de tarefas">
         <button id="taskListTab" class="subtab active" role="tab" aria-selected="true" onclick="showTaskView('list')">Lista</button>
         <button id="taskMapTab" class="subtab" role="tab" aria-selected="false" onclick="showTaskView('map')">Mapa</button>
         <button class="add-button" onclick="openTaskModal(null)">+ Nova tarefa</button>
@@ -67,34 +67,34 @@
       <div id="taskListView">
         <div class="toolbar">
           <label for="filterCol">Filtrar</label>
-          <select id="filterCol" onchange="applyTaskFilter()"><option value="">Todas as colunas</option><option value="name">Tarefa</option><option value="cat">Categoria</option><option value="F">Facilidade</option><option value="U">Urgência</option><option value="I">Importância</option><option value="P">Prioridade</option><option value="done">Concluída</option></select>
+          <select id="filterCol" onchange="applyTaskFilter()"><option value="">Todas as colunas</option><option value="name">Tarefa</option><option value="cat">Categoria</option><option value="F">Facilidade</option><option value="U">Urgencia</option><option value="I">Importancia</option><option value="P">Prioridade</option><option value="done">Concluida</option></select>
           <input id="filterVal" type="text" placeholder="texto ou valor" onkeyup="applyTaskFilter()">
           <button onclick="clearTaskFilter()">Limpar</button>
         </div>
         <p id="listStatus" class="small-status"></p>
-        <div class="table-scroll"><table aria-label="Lista de tarefas"><thead><tr><th>✓</th><th><button onclick="sortTasks('name')">Tarefa <span id="sortName"></span></button></th><th><button onclick="sortTasks('cat')">Categoria <span id="sortCat"></span></button></th><th><button onclick="sortTasks('F')">F <span id="sortF"></span></button></th><th><button onclick="sortTasks('U')">U <span id="sortU"></span></button></th><th><button onclick="sortTasks('I')">I <span id="sortI"></span></button></th><th><button onclick="sortTasks('P')">P <span id="sortP"></span></button></th></tr></thead><tbody id="taskRows"></tbody></table></div>
+        <div class="table-scroll"><table aria-label="Lista de tarefas"><thead><tr><th></th><th><button onclick="sortTasks('name')">Tarefa <span id="sortName"></span></button></th><th><button onclick="sortTasks('cat')">Categoria <span id="sortCat"></span></button></th><th><button onclick="sortTasks('F')">F <span id="sortF"></span></button></th><th><button onclick="sortTasks('U')">U <span id="sortU"></span></button></th><th><button onclick="sortTasks('I')">I <span id="sortI"></span></button></th><th><button onclick="sortTasks('P')">P <span id="sortP"></span></button></th></tr></thead><tbody id="taskRows"></tbody></table></div>
       </div>
-      <div id="taskMapView" class="hidden"><p class="small-status">Clique em uma categoria para recolher ou expandir suas tarefas. O mapa é um complemento; a lista continua sendo a visualização mais acessível.</p><div id="taskMap" class="task-map" aria-label="Mapa radial de tarefas"></div></div>
+      <div id="taskMapView" class="hidden"><p class="small-status">Clique em uma categoria para recolher ou expandir suas tarefas. O mapa e um complemento; a lista continua sendo a visualizacao mais acessivel.</p><div id="taskMap" class="task-map" aria-label="Mapa radial de tarefas"></div></div>
     </section>
 
     <section id="viewTcc" class="view hidden" aria-labelledby="tccTitle">
       <div class="section-heading">
         <div><p class="eyebrow">APLICATIVO 02</p><h1 id="tccTitle">Virtual TCC</h1></div>
-        <button class="text-button" onclick="navigate('home')">← Portal</button>
+        <button class="text-button" onclick="navigate('home')"><- Portal</button>
       </div>
-      <div class="notice warning"><strong>Importante:</strong> o Virtual TCC é uma ferramenta de reflexão guiada, não é serviço de emergência, diagnóstico ou substituto de psicoterapia e atendimento médico. Em risco imediato, procure ajuda local agora.</div>
-      <div class="tcc-toolbar"><span id="tccStatus" class="status-badge">verificando conexão…</span><button class="text-button" onclick="clearTccSession()">Limpar conversa</button></div>
+      <div class="notice warning"><strong>Importante:</strong> o Virtual TCC e uma ferramenta de reflexao guiada, nao e servico de emergencia, diagnostico ou substituto de psicoterapia e atendimento medico. Em risco imediato, procure ajuda local agora.</div>
+      <div class="tcc-toolbar"><span id="tccStatus" class="status-badge">verificando conexao...</span><button class="text-button" onclick="clearTccSession()">Limpar conversa</button></div>
       <div id="tccMessages" class="conversation" role="log" aria-live="polite" aria-label="Conversa com Virtual TCC"></div>
       <form id="tccForm" class="message-form" onsubmit="sendTccMessage(event)">
-        <label for="tccInput">O que você gostaria de compreender ou lidar melhor?</label>
-        <textarea id="tccInput" rows="3" maxlength="4000" placeholder="Escreva no seu ritmo…"></textarea>
+        <label for="tccInput">O que voce gostaria de compreender ou lidar melhor?</label>
+        <textarea id="tccInput" rows="3" maxlength="4000" placeholder="Escreva no seu ritmo..."></textarea>
         <div class="form-row"><span class="small-status">Uma pergunta por vez. A conversa fica salva neste navegador.</span><button id="tccSend" class="primary-button" type="submit">Enviar</button></div>
       </form>
-      <p class="small-print">Privacidade local: a conversa é guardada no armazenamento deste navegador. Quando a IA estiver conectada, as mensagens necessárias são enviadas ao provedor configurado no servidor.</p>
+      <p class="small-print">Privacidade local: a conversa e guardada no armazenamento deste navegador. Quando a IA estiver conectada, as mensagens necessarias sao enviadas ao provedor configurado no servidor.</p>
     </section>
   </main>
 
-  <div id="taskModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="taskModalTitle"><div class="modal-box"><h2 id="taskModalTitle">Nova tarefa</h2><p id="taskError" class="error-text"></p><label for="taskName">Tarefa</label><input id="taskName" maxlength="160"><label for="taskCat">Categoria</label><input id="taskCat" maxlength="80"><div class="score-grid"><div><label for="taskF">Facilidade (F)</label><input id="taskF" type="number" min="0" max="3" value="0"></div><div><label for="taskU">Urgência (U)</label><input id="taskU" type="number" min="0" max="3" value="0"></div><div><label for="taskI">Importância (I)</label><input id="taskI" type="number" min="0" max="3" value="0"></div></div><label id="doneLabel" class="hidden"><input id="taskDone" type="checkbox"> Tarefa concluída</label><div class="modal-actions"><button class="primary-button" onclick="saveTask()">Salvar</button><button onclick="closeTaskModal()">Cancelar</button><button id="deleteTaskButton" class="hidden" onclick="deleteCurrentTask()">Excluir</button></div></div></div>
+  <div id="taskModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="taskModalTitle"><div class="modal-box"><h2 id="taskModalTitle">Nova tarefa</h2><p id="taskError" class="error-text"></p><label for="taskName">Tarefa</label><input id="taskName" maxlength="160"><label for="taskCat">Categoria</label><input id="taskCat" maxlength="80"><div class="score-grid"><div><label for="taskF">Facilidade (F)</label><input id="taskF" type="number" min="0" max="3" value="0"></div><div><label for="taskU">Urgencia (U)</label><input id="taskU" type="number" min="0" max="3" value="0"></div><div><label for="taskI">Importancia (I)</label><input id="taskI" type="number" min="0" max="3" value="0"></div></div><label id="doneLabel" class="hidden"><input id="taskDone" type="checkbox"> Tarefa concluida</label><div class="modal-actions"><button class="primary-button" onclick="saveTask()">Salvar</button><button onclick="closeTaskModal()">Cancelar</button><button id="deleteTaskButton" class="hidden" onclick="deleteCurrentTask()">Excluir</button></div></div></div>
   <script src="app.js"></script>
 </body>
 </html>

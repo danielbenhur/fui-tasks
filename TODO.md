@@ -1,9 +1,9 @@
 # Resultados
 
-- O portal inicial exibe o FUI Tasks e o Virtual TCC como aplicativos acessíveis, com navegação por teclado, alto contraste, poucos elementos e espaço para futuros aplicativos.
-- O FUI Tasks mantém criação, edição, exclusão, conclusão, prioridade, filtro, ordenação, persistência local e mapa radial sem dependências externas essenciais.
-- O Virtual TCC oferece conversa em português orientada por diálogo socrático, faz uma pergunta por vez, reconhece e sintetiza brevemente cada resposta e conduz a investigação de forma flexível conforme situação, pensamentos, emoções, crenças, evidências, padrões possíveis, perspectiva alternativa, próximo passo e consolidação.
-- O Virtual TCC não diagnostica, não prescreve, não substitui acompanhamento profissional, não valida pensamentos automaticamente, não força todas as etapas e mantém avisos visíveis de uso responsável.
-- Menções a suicídio, autolesão, violência iminente ou impossibilidade de permanecer seguro interrompem a exploração cognitiva e retornam orientação direta para ajuda imediata e serviços de emergência.
-- A integração de IA usa o endpoint server-side do Hugging Face com `HF_TOKEN` fora do navegador, trata ausência de chave, limites e erros, e oferece modo demonstração local sem fingir que há IA conectada.
-- A aplicação persiste tarefas e conversa apenas no navegador, funciona como página estática sem chamadas externas essenciais e inclui instruções para ativar o proxy seguro quando hospedada com backend.
+- O portal inicial exibe o FUI Tasks e o Virtual TCC como aplicativos acessiveis, com navegacao por teclado, alto contraste, poucos elementos e espaco para futuros aplicativos.
+- O FUI Tasks mantem criacao, edicao, exclusao, conclusao, prioridade, filtro, ordenacao, persistencia local e mapa radial sem dependencias externas essenciais.
+- O Virtual TCC oferece conversa em portugues orientada por dialogo socratico, faz uma pergunta por vez, reconhece e sintetiza brevemente cada resposta e conduz a investigacao de forma flexivel conforme situacao, pensamentos, emocoes, crencas, evidencias, padroes possiveis, perspectiva alternativa, proximo passo e consolidacao.
+- O Virtual TCC nao diagnostica, nao prescreve, nao substitui acompanhamento profissional, nao valida pensamentos automaticamente, nao forca todas as etapas e mantem avisos visiveis de uso responsavel.
+- Mencoes a suicidio, autolesao, violencia iminente ou impossibilidade de permanecer seguro interrompem a exploracao cognitiva e retornam orientacao direta para ajuda imediata e servicos de emergencia.
+- A integracao de IA usa o endpoint server-side do Hugging Face com `HF_TOKEN` fora do navegador, trata ausencia de chave, limites e erros, e oferece modo demonstracao local sem fingir que ha IA conectada.
+- A aplicacao persiste tarefas e conversa apenas no navegador, funciona como pagina estatica sem chamadas externas essenciais e inclui instrucoes para ativar o proxy seguro quando hospedada com backend.

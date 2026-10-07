@@ -1,4 +1,4 @@
-/* FUI / visual e-ink: preto, branco e cinzas, sem animações ou dependências. */
+/* FUI / visual e-ink: preto, branco e cinzas, sem animacoes ou dependencias. */
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; }
 body { background: #fff; color: #111; font-family: Georgia, serif; font-size: 16px; line-height: 1.45; }
